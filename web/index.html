@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Gridworld RL Playground</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Gridworld RL Playground</h1>
+
+      <div class="row">
+        <canvas id="grid" width="640" height="480"></canvas>
+
+        <div class="panel">
+          <button id="btnEpisode">Sample episode (no learning)</button>
+          <button id="btnUpdate">1 update (REINFORCE)</button>
+          <div class="row2">
+            <label>N</label>
+            <input id="n" type="number" value="50" min="1" />
+            <button id="btnUpdateN">Run N updates</button>
+          </div>
+
+          <div class="row2">
+            <label>lr</label>
+            <input id="lr" type="number" value="0.10" step="0.01" />
+          </div>
+          <div class="row2">
+            <label>gamma</label>
+            <input id="gamma" type="number" value="0.99" step="0.01" />
+          </div>
+          <div class="row2">
+            <label>baseline</label>
+            <input id="baseline" type="checkbox" checked />
+          </div>
+
+          <pre id="log"></pre>
+          <canvas id="curve" width="320" height="120"></canvas>
+
+          <p class="hint">
+            Homework: implement <code>src/rl/reinforce.py</code>.<br/>
+            Until then, “Update” returns 501.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
