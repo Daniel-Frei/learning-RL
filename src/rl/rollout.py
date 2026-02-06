@@ -10,7 +10,7 @@ def run_episode(env: Gridworld, policy: TabularSoftmaxPolicy, rng: np.random.Gen
     S, A, R = [s], [], []
     done = False
     while not done:
-        a = policy.sample(s, rng)
+        a = policy.sample_action(s, rng)
         s2, r, done = env.step(a)
         A.append(a)
         R.append(float(r))

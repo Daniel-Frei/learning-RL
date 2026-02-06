@@ -29,8 +29,8 @@ def reinforce_update(policy: TabularSoftmaxPolicy, S, A, R, cfg: ReinforceConfig
     Notes:
       - Use cfg.gamma for returns
       - If cfg.use_baseline, subtract baseline (e.g. mean(G)) to reduce variance
-      - policy.theta is your parameter table.
-      - policy.probs(s) gives pi(.|s)
+      - policy.policy_parameters is your parameter table.
+      - policy.action_probabilities(s) gives pi(.|s)
 
     Leave everything else unchanged.
     """
@@ -45,9 +45,9 @@ def reinforce_update(policy: TabularSoftmaxPolicy, S, A, R, cfg: ReinforceConfig
         # adv = G
         raise NotImplementedError("Implement advantage without baseline")
 
-    # TODO compute grad and update theta
+    # TODO compute grad and update parameters
     # grad[s,:] += (one_hot(a) - pi(.|s)) * adv_t
-    # policy.theta += cfg.lr * grad
+    # policy.policy_parameters += cfg.lr * grad
 
     # Return episode stats (so UI can plot learning curve)
     return {"return": float(sum(R)), "len": int(len(R))}

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import numpy as np
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
@@ -21,79 +22,90 @@ app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
 rng = np.random.default_rng(42)
 
 env = Gridworld(
-    H=6, W=8,
-    start=(0, 0),
-    goal=(5, 7),
-    walls={(1,2), (2,2), (3,2), (4,2), (4,3), (4,4), (2,5)},
+    grid_height=6,
+    grid_width=8,
+    start_position=(0, 0),
+    goal_position=(5, 7),
+    wall_positions={(1, 2), (2, 2), (3, 2), (4, 2), (4, 3), (4, 4), (2, 5)},
     step_reward=-0.04,
     goal_reward=1.0,
-    max_steps=200
+    max_steps_per_episode=20,  # or 20, depending on what you want
 )
 
-policy = TabularSoftmaxPolicy(env.nS, env.nA, seed=1)
+policy = TabularSoftmaxPolicy(env.number_of_states, env.number_of_actions, random_seed=1)
 
-history_returns = []  # for plotting learning curve
+history_returns: list[float] = []  # for plotting learning curve
+
 
 @app.get("/", response_class=HTMLResponse)
 def index():
     return FileResponse(WEB_DIR / "index.html")
 
+
 @app.get("/api/state")
 def get_state():
     return {
-        "H": env.H,
-        "W": env.W,
-        "start": list(env.start),
-        "goal": list(env.goal),
-        "walls": [list(x) for x in sorted(env.walls)],
+        "H": env.grid_height,
+        "W": env.grid_width,
+        "start": list(env.start_position),
+        "goal": list(env.goal_position),
+        "walls": [list(pos) for pos in sorted(env.wall_positions)],
         "step_reward": env.step_reward,
         "goal_reward": env.goal_reward,
-        "max_steps": env.max_steps,
+        "max_steps": env.max_steps_per_episode,
     }
+
 
 @app.post("/api/reset")
 def reset():
     env.reset()
     return {"ok": True}
 
+
 @app.get("/api/policy")
 def get_policy():
-    # Return action probs for each state (for later arrows/heatmap)
     probs = []
-    for s in range(env.nS):
-        probs.append(policy.probs(s).tolist())
+    for state_index in range(env.number_of_states):
+        probs.append(policy.action_probabilities(state_index).tolist())
     return {"probs": probs}
+
 
 @app.post("/api/episode")
 def sample_episode():
-    S, A, R = run_episode(env, policy, rng)
-    traj = [list(env.state_to_pos(s)) for s in S]
+    states, actions, rewards = run_episode(env, policy, rng)
+
+    trajectory_positions = [list(env.state_index_to_position(s)) for s in states]
+
     return {
-        "trajectory": traj,   # list of [r,c]
-        "actions": A,         # list of ints
-        "rewards": R,         # list of floats
-        "return": float(sum(R)),
-        "len": int(len(R)),
+        "trajectory": trajectory_positions,  # list of [row, col]
+        "actions": actions,                  # list of ints
+        "rewards": rewards,                  # list of floats
+        "return": float(sum(rewards)),
+        "len": int(len(rewards)),
         "history_returns": history_returns[-200:],
     }
 
+
 @app.post("/api/update")
 def do_update(lr: float = 0.10, gamma: float = 0.99, baseline: bool = True):
-    S, A, R = run_episode(env, policy, rng)
+    states, actions, rewards = run_episode(env, policy, rng)
     cfg = ReinforceConfig(lr=lr, gamma=gamma, use_baseline=baseline)
+
     try:
-        info = reinforce_update(policy, S, A, R, cfg)
+        info = reinforce_update(policy, states, actions, rewards, cfg)
     except NotImplementedError as e:
         return JSONResponse(
             status_code=501,
             content={"error": str(e), "hint": "Implement src/rl/reinforce.py"},
         )
 
-    history_returns.append(info["return"])
-    traj = [list(env.state_to_pos(s)) for s in S]
+    history_returns.append(float(info["return"]))
+
+    trajectory_positions = [list(env.state_index_to_position(s)) for s in states]
+
     return {
-        "trajectory": traj,
-        "return": info["return"],
-        "len": info["len"],
+        "trajectory": trajectory_positions,
+        "return": float(info["return"]),
+        "len": int(info["len"]),
         "history_returns": history_returns[-200:],
     }
