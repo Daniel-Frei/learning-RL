@@ -47,6 +47,8 @@ def get_state():
     return {
         "H": env.grid_height,
         "W": env.grid_width,
+        "number_of_states": env.number_of_states,
+        "number_of_actions": env.number_of_actions,
         "start": list(env.start_position),
         "goal": list(env.goal_position),
         "walls": [list(pos) for pos in sorted(env.wall_positions)],
@@ -68,6 +70,11 @@ def get_policy():
     for state_index in range(env.number_of_states):
         probs.append(policy.action_probabilities(state_index).tolist())
     return {"probs": probs}
+
+
+@app.get("/api/parameters")
+def get_parameters():
+    return {"parameters": policy.policy_parameters.tolist()}
 
 
 @app.post("/api/episode")

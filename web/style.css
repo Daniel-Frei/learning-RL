@@ -9,3 +9,20 @@ button { width: 100%; padding: 10px; margin: 6px 0; border-radius: 8px; border: 
 canvas { background: #0f0f12; border-radius: 10px; }
 .hint { opacity: 0.85; font-size: 0.9rem; }
 code { background: #222; padding: 2px 5px; border-radius: 5px; }
+
+.tabs { display: flex; gap: 8px; margin: 10px 0 16px; }
+.tab-button { width: auto; padding: 8px 14px; background: #151518; color: #ddd; border: 1px solid #222; margin: 0; }
+.tab-button.is-active { background: #222; color: #fff; border-color: #333; }
+.tab-content { display: none; }
+.tab-content.is-active { display: block; }
+
+.params-panel { background: #151518; padding: 12px; border-radius: 10px; }
+.params-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.params-title { font-weight: 600; }
+.btn-inline { width: auto; padding: 6px 10px; margin: 0; background: #222; color: #ddd; border: 1px solid #333; }
+
+.params-table { max-height: 520px; overflow: auto; border: 1px solid #222; border-radius: 8px; }
+.params-table table { border-collapse: collapse; width: 100%; }
+.params-table th, .params-table td { border: 1px solid #222; padding: 6px 8px; text-align: right; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.9rem; }
+.params-table th { position: sticky; top: 0; background: #101013; z-index: 1; }
+.params-table td:first-child, .params-table th:first-child { text-align: left; position: sticky; left: 0; background: #101013; z-index: 2; }

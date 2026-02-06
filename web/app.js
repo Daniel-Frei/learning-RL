@@ -15,9 +15,16 @@ const gammaEl = document.getElementById("gamma");
 const nEl = document.getElementById("n");
 const baselineEl = document.getElementById("baseline");
 
+const tabButtons = document.querySelectorAll(".tab-button");
+const tabGrid = document.getElementById("tab-grid");
+const tabParams = document.getElementById("tab-params");
+const paramsTableEl = document.getElementById("paramsTable");
+const btnRefreshParams = document.getElementById("btnRefreshParams");
+
 let env = null;
 let lastTraj = null;
 let hist = [];
+let activeTab = "grid";
 
 function log(msg) {
   logEl.textContent = msg + "\n" + logEl.textContent;
@@ -43,6 +50,20 @@ function drawGrid() {
       gctx.fillRect(c * cw, r * ch, cw, ch);
       gctx.strokeStyle = "#222";
       gctx.strokeRect(c * cw, r * ch, cw, ch);
+    }
+  }
+
+  // state indices (top-right of each cell)
+  gctx.fillStyle = "#7a7a7a";
+  gctx.font = "11px ui-monospace, SFMono-Regular, Menlo, Consolas, \"Liberation Mono\", monospace";
+  gctx.textAlign = "right";
+  gctx.textBaseline = "top";
+  for (let r = 0; r < env.H; r++) {
+    for (let c = 0; c < env.W; c++) {
+      const stateIndex = r * env.W + c;
+      const x = (c + 1) * cw - 4;
+      const y = r * ch + 3;
+      gctx.fillText(String(stateIndex), x, y);
     }
   }
 
@@ -115,6 +136,73 @@ async function api(path, opts) {
   return data;
 }
 
+function setActiveTab(name) {
+  activeTab = name;
+  tabButtons.forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.tab === name);
+  });
+  tabGrid.classList.toggle("is-active", name === "grid");
+  tabParams.classList.toggle("is-active", name === "params");
+  if (name === "params") {
+    loadParams();
+  }
+}
+
+function renderParamsTable(parameters) {
+  if (!parameters || parameters.length === 0) {
+    paramsTableEl.textContent = "No parameters.";
+    return;
+  }
+
+  const actions = parameters[0].length;
+  const table = document.createElement("table");
+  const thead = document.createElement("thead");
+  const headRow = document.createElement("tr");
+
+  const thState = document.createElement("th");
+  thState.textContent = "state";
+  headRow.appendChild(thState);
+
+  for (let a = 0; a < actions; a++) {
+    const th = document.createElement("th");
+    th.textContent = `a${a}`;
+    headRow.appendChild(th);
+  }
+
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+  for (let s = 0; s < parameters.length; s++) {
+    const row = document.createElement("tr");
+    const label = document.createElement("td");
+    label.textContent = `s${s}`;
+    row.appendChild(label);
+
+    const rowParams = parameters[s];
+    for (let a = 0; a < rowParams.length; a++) {
+      const td = document.createElement("td");
+      td.textContent = rowParams[a].toFixed(4);
+      row.appendChild(td);
+    }
+    tbody.appendChild(row);
+  }
+
+  table.appendChild(tbody);
+  paramsTableEl.innerHTML = "";
+  paramsTableEl.appendChild(table);
+}
+
+async function loadParams() {
+  if (!paramsTableEl) return;
+  try {
+    const d = await api("/api/parameters");
+    renderParamsTable(d.parameters);
+  } catch (e) {
+    paramsTableEl.textContent = `Error loading parameters: ${e.status}`;
+  }
+}
+
 async function init() {
   env = await api("/api/state");
   drawGrid();
@@ -142,6 +230,9 @@ btnUpdate.onclick = async () => {
     drawGrid();
     drawCurve();
     log(`Update: return=${d.return.toFixed(3)} len=${d.len}`);
+    if (activeTab === "params") {
+      loadParams();
+    }
   } catch (e) {
     if (e.status === 501) {
       log(`Update not implemented: ${e.data.error}`);
@@ -157,5 +248,11 @@ btnUpdateN.onclick = async () => {
     await btnUpdate.onclick();
   }
 };
+
+tabButtons.forEach((btn) => {
+  btn.onclick = () => setActiveTab(btn.dataset.tab);
+});
+
+btnRefreshParams.onclick = () => loadParams();
 
 init();
