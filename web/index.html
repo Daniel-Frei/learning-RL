@@ -19,6 +19,9 @@
           <canvas id="grid" width="640" height="480"></canvas>
 
           <div class="panel">
+            <pre id="log"></pre>
+            <canvas id="curve" width="320" height="120"></canvas>
+
             <button id="btnEpisode">Sample episode (no learning)</button>
             <button id="btnUpdate">1 update (REINFORCE)</button>
             <div class="row2">
@@ -40,12 +43,42 @@
               <input id="baseline" type="checkbox" checked />
             </div>
 
-            <pre id="log"></pre>
-            <canvas id="curve" width="320" height="120"></canvas>
+            <div class="section-title">Environment</div>
+            <div class="row2">
+              <label>H</label>
+              <input id="gridH" type="number" min="1" value="6" />
+              <label>W</label>
+              <input id="gridW" type="number" min="1" value="8" />
+            </div>
+            <div class="row2">
+              <label>start (r,c)</label>
+              <input id="startPos" type="text" value="0,0" />
+            </div>
+            <div class="row2">
+              <label>goal (r,c)</label>
+              <input id="goalPos" type="text" value="5,7" />
+            </div>
+            <div class="row2">
+              <label>walls</label>
+              <textarea id="walls" rows="3">1,2;2,2;3,2;4,2;4,3;4,4;2,5</textarea>
+            </div>
+            <div class="row2">
+              <label>step r</label>
+              <input id="stepReward" type="number" step="0.01" value="-0.04" />
+            </div>
+            <div class="row2">
+              <label>goal r</label>
+              <input id="goalReward" type="number" step="0.01" value="1.0" />
+            </div>
+            <div class="row2">
+              <label>max steps</label>
+              <input id="maxSteps" type="number" min="1" value="100" />
+            </div>
+            <button id="btnApplyEnv">Apply env</button>
+            <div class="hint small">Walls format: r,c; r,c; r,c</div>
 
             <p class="hint">
-              Homework: implement <code>src/rl/reinforce.py</code>.<br/>
-              Until then, "Update" returns 501.
+              Algo: <code>src/rl/reinforce.py</code>.<br/>
             </p>
           </div>
         </div>

@@ -14,6 +14,15 @@ const lrEl = document.getElementById("lr");
 const gammaEl = document.getElementById("gamma");
 const nEl = document.getElementById("n");
 const baselineEl = document.getElementById("baseline");
+const gridHEl = document.getElementById("gridH");
+const gridWEl = document.getElementById("gridW");
+const startPosEl = document.getElementById("startPos");
+const goalPosEl = document.getElementById("goalPos");
+const wallsEl = document.getElementById("walls");
+const stepRewardEl = document.getElementById("stepReward");
+const goalRewardEl = document.getElementById("goalReward");
+const maxStepsEl = document.getElementById("maxSteps");
+const btnApplyEnv = document.getElementById("btnApplyEnv");
 
 const tabButtons = document.querySelectorAll(".tab-button");
 const tabGrid = document.getElementById("tab-grid");
@@ -193,6 +202,52 @@ function renderParamsTable(parameters) {
   paramsTableEl.appendChild(table);
 }
 
+function parsePair(text) {
+  const parts = text.split(",").map((p) => p.trim()).filter((p) => p.length > 0);
+  if (parts.length !== 2) {
+    throw new Error(`Expected 'r,c' but got '${text}'`);
+  }
+  const r = parseInt(parts[0], 10);
+  const c = parseInt(parts[1], 10);
+  if (Number.isNaN(r) || Number.isNaN(c)) {
+    throw new Error(`Invalid numbers in '${text}'`);
+  }
+  return [r, c];
+}
+
+function parseWalls(text) {
+  const walls = [];
+  const tokens = text.split(/[;\n]/);
+  for (const raw of tokens) {
+    const t = raw.trim();
+    if (!t) continue;
+    walls.push(parsePair(t));
+  }
+  return walls;
+}
+
+function formatPair(pair) {
+  return `${pair[0]},${pair[1]}`;
+}
+
+function ensureNumber(value, name) {
+  if (Number.isNaN(value)) {
+    throw new Error(`${name} must be a number`);
+  }
+  return value;
+}
+
+function populateEnvInputs(state) {
+  gridHEl.value = state.H;
+  gridWEl.value = state.W;
+  startPosEl.value = formatPair(state.start);
+  goalPosEl.value = formatPair(state.goal);
+  wallsEl.value = state.walls.map(formatPair).join("; ");
+  stepRewardEl.value = state.step_reward;
+  goalRewardEl.value = state.goal_reward;
+  maxStepsEl.value = state.max_steps;
+}
+
 async function loadParams() {
   if (!paramsTableEl) return;
   try {
@@ -205,6 +260,7 @@ async function loadParams() {
 
 async function init() {
   env = await api("/api/state");
+  populateEnvInputs(env);
   drawGrid();
   log("Loaded environment.");
 }
@@ -246,6 +302,41 @@ btnUpdateN.onclick = async () => {
   const N = parseInt(nEl.value, 10);
   for (let i = 0; i < N; i++) {
     await btnUpdate.onclick();
+  }
+};
+
+btnApplyEnv.onclick = async () => {
+  try {
+    const payload = {
+      grid_height: ensureNumber(parseInt(gridHEl.value, 10), "grid_height"),
+      grid_width: ensureNumber(parseInt(gridWEl.value, 10), "grid_width"),
+      start_position: parsePair(startPosEl.value),
+      goal_position: parsePair(goalPosEl.value),
+      wall_positions: parseWalls(wallsEl.value),
+      step_reward: ensureNumber(parseFloat(stepRewardEl.value), "step_reward"),
+      goal_reward: ensureNumber(parseFloat(goalRewardEl.value), "goal_reward"),
+      max_steps_per_episode: ensureNumber(parseInt(maxStepsEl.value, 10), "max_steps"),
+    };
+
+    const d = await api("/api/config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    env = d;
+    lastTraj = null;
+    hist = [];
+    populateEnvInputs(env);
+    drawGrid();
+    drawCurve();
+    if (activeTab === "params") {
+      loadParams();
+    }
+    log("Updated environment.");
+  } catch (e) {
+    const msg = e?.data?.detail || e?.message || "Unknown error";
+    log(`Config error: ${msg}`);
   }
 };
 
