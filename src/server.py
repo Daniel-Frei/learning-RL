@@ -29,7 +29,7 @@ env = Gridworld(
     wall_positions={(1, 2), (2, 2), (3, 2), (4, 2), (4, 3), (4, 4), (2, 5)},
     step_reward=-0.04,
     goal_reward=1.0,
-    max_steps_per_episode=20,  # or 20, depending on what you want
+    max_steps_per_episode=100,  # or 20, depending on what you want
 )
 
 policy = TabularSoftmaxPolicy(env.number_of_states, env.number_of_actions, random_seed=1)
@@ -96,7 +96,11 @@ def sample_episode():
 @app.post("/api/update")
 def do_update(lr: float = 0.10, gamma: float = 0.99, baseline: bool = True):
     states, actions, rewards = run_episode(env, policy, rng)
-    cfg = ReinforceConfig(lr=lr, gamma=gamma, use_baseline=baseline)
+    cfg = ReinforceConfig(
+        learning_rate=lr,
+        discount_factor=gamma,
+        use_baseline=baseline,
+    )
 
     try:
         info = reinforce_update(policy, states, actions, rewards, cfg)
